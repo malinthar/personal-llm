@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personal LLM Interface</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+        }
+        textarea {
+            width: 100%;
+            height: 120px;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            resize: vertical;
+            font-family: inherit;
+        }
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        .control-group {
+            flex: 1;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        input[type="number"], select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        .output {
+            margin-top: 20px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 15px;
+            background-color: #f9f9f9;
+            white-space: pre-wrap;
+            min-height: 150px;
+        }
+        .loading {
+            text-align: center;
+            color: #777;
+            font-style: italic;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Personal LLM Interface</h1>
+        
+        <div>
+            <label for="prompt">Enter your prompt:</label>
+            <textarea id="prompt" placeholder="Type your prompt here..."></textarea>
+        </div>
+        
+        <div class="controls">
+            <div class="control-group">
+                <label for="max-tokens">Max Tokens:</label>
+                <input type="number" id="max-tokens" value="100" min="1" max="2048">
+            </div>
+            
+            <div class="control-group">
+                <label for="temperature">Temperature:</label>
+                <input type="number" id="temperature" value="0.7" min="0" max="2" step="0.1">
+            </div>
+            
+            <div class="control-group">
+                <label for="mode">Mode:</label>
+                <select id="mode">
+                    <option value="generate">Text Generation</option>
+                    <option value="chat">Chat Completion</option>
+                </select>
+            </div>
+        </div>
+        
+        <button id="submit-btn">Generate Response</button>
+        
+        <div class="loading" id="loading">Generating response...</div>
+        
+        <div>
+            <label>Response:</label>
+            <div class="output" id="output"></div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('submit-btn').addEventListener('click', async () => {
+            const prompt = document.getElementById('prompt').value;
+            const maxTokens = parseInt(document.getElementById('max-tokens').value);
+            const temperature = parseFloat(document.getElementById('temperature').value);
+            const mode = document.getElementById('mode').value;
+            
+            if (!prompt) {
+                alert('Please enter a prompt');
+                return;
+            }
+            
+            const output = document.getElementById('output');
+            const loading = document.getElementById('loading');
+            
+            output.textContent = '';
+            loading.style.display = 'block';
+            
+            try {
+                let endpoint, data;
+                
+                if (mode === 'generate') {
+                    endpoint = '/generate';
+                    data = {
+                        prompt,
+                        max_tokens: maxTokens,
+                        temperature
+                    };
+                } else {
+                    endpoint = '/chat/completions';
+                    data = {
+                        messages: [{ role: 'user', content: prompt }],
+                        max_tokens: maxTokens,
+                        temperature
+                    };
+                }
+                
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (mode === 'generate') {
+                    output.textContent = result.text || result.generated_text || JSON.stringify(result, null, 2);
+                } else {
+                    output.textContent = result.choices?.[0]?.message?.content || JSON.stringify(result, null, 2);
+                }
+            } catch (error) {
+                output.textContent = `Error: ${error.message}`;
+                console.error(error);
+            } finally {
+                loading.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>
