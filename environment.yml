@@ -1,0 +1,17 @@
+name: llm-server
+channels:
+  - pytorch
+  - huggingface
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.10
+  - pip=23.1.2
+  - pytorch=2.0.1
+  - pip:
+    - fastapi==0.103.1
+    - uvicorn==0.23.2
+    - transformers==4.33.1
+    - pydantic==2.3.0
+    - python-dotenv==1.0.0
+    - accelerate==0.20.3
